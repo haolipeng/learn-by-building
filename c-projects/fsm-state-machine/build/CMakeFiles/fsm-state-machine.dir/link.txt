@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/fsm-state-machine.dir/state_machine.c.o CMakeFiles/fsm-state-machine.dir/main.c.o -o fsm-state-machine 

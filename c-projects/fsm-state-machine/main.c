@@ -1,5 +1,24 @@
 #include "state_machine.h"
 
+
+// 售货机状态枚举
+typedef enum {
+    VENDING_IDLE = 0,          // 空闲等待
+    VENDING_ITEM_SELECTED,     // 已选商品
+    VENDING_COIN_INSERTED,     // 已投币
+    VENDING_DISPENSING,        // 出货中
+    VENDING_STATE_MAX
+} vending_state_t;
+
+// 售货机事件枚举
+typedef enum {
+    VENDING_SELECT_ITEM = 0,   // 选择商品
+    VENDING_INSERT_COIN,       // 投币
+    VENDING_DELIVER,           // 出货
+    VENDING_RESET,             // 重置
+    VENDING_EVENT_MAX
+} vending_event_t;
+
 // 售货机状态定义
 static struct state idleState, itemSelectedState, coinInsertedState, dispensingState;
 

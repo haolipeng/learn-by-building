@@ -3,27 +3,9 @@
 
 #include <stdio.h>
 
-// 售货机状态枚举
-typedef enum {
-    VENDING_IDLE = 0,          // 空闲等待
-    VENDING_ITEM_SELECTED,     // 已选商品
-    VENDING_COIN_INSERTED,     // 已投币
-    VENDING_DISPENSING,        // 出货中
-    VENDING_STATE_MAX
-} vending_state_t;
-
-// 售货机事件枚举
-typedef enum {
-    VENDING_SELECT_ITEM = 0,   // 选择商品
-    VENDING_INSERT_COIN,       // 投币
-    VENDING_DELIVER,           // 出货
-    VENDING_RESET,             // 重置
-    VENDING_EVENT_MAX
-} vending_event_t;
-
 struct event {
     //事件类型
-    vending_event_t type;
+    int type;
     // 事件数据（用于投币金额等）
     void* data;
 };
@@ -33,9 +15,9 @@ struct state;
 //状态转换的结构体
 struct transition{
     //触发状态转换的事件
-    vending_event_t eventType;
+    int eventType;
 
-    //下一个状态
+    //待切换的下一个状态
     struct state* nextState;
     
     // 动作函数指针（可选）
@@ -59,11 +41,11 @@ struct StateMachine {
 enum stateM_handleEventRetVals
 {
    stateM_errArg = -2,
-   stateM_errorStateReached,
-   stateM_stateChanged,
-   stateM_stateLoopSelf,
-   stateM_noStateChange,
-   stateM_finalStateReached,
+   stateM_errorStateReached, // 到达错误状态
+   stateM_stateChanged, // 状态已改变
+   stateM_stateLoopSelf, // 状态自循环
+   stateM_noStateChange, // 无状态变化
+   stateM_finalStateReached, // 到达最终状态
 };
 
 //初始化函数
