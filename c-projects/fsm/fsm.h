@@ -1,4 +1,4 @@
-#ifndef STATE_MACHINE_H //编译宏
+#ifndef STATE_MACHINE_H //编译宏,防止重复包含
 #define STATE_MACHINE_H
 
 #include <stdio.h>
@@ -6,7 +6,8 @@
 struct event {
     //事件类型
     int type;
-    // 事件数据（用于投币金额等）
+
+    // 事件数据
     void* data;
 };
 
@@ -34,8 +35,8 @@ struct state {
 };
 
 struct StateMachine {
-    struct state* curState;
-    struct state* prevState;
+    struct state* curState; //当前状态
+    struct state* prevState;//之前状态
 };
 
 enum stateM_handleEventRetVals

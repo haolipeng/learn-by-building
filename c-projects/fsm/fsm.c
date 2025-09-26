@@ -1,4 +1,4 @@
-#include "state_machine.h"
+#include "fsm.h"
 
 //初始化函数
 void FSM_init(struct StateMachine *fsm, struct state* initState)

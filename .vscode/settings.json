@@ -1,0 +1,6 @@
+{
+    "cmake.sourceDirectory": "/home/work/clionProject/learn-by-building/c-projects/fsm-state-machine",
+    "files.associations": {
+        "state_machine.h": "c"
+    }
+}
