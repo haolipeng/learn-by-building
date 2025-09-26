@@ -1,3 +1,0 @@
-/home/work/clionProject/learn-by-building/c-projects/fsm-state-machine/build/CMakeFiles/fsm-state-machine.dir
-/home/work/clionProject/learn-by-building/c-projects/fsm-state-machine/build/CMakeFiles/edit_cache.dir
-/home/work/clionProject/learn-by-building/c-projects/fsm-state-machine/build/CMakeFiles/rebuild_cache.dir
