@@ -14,7 +14,10 @@ void CTimeWheel::tickStepRun()
 {
 	while(1)
 	{
-		sessionKeyBuckets.push_back(Bucket());
+		{
+			std::lock_guard<std::mutex> lock(mtx);
+			sessionKeyBuckets.push_back(Bucket());
+		}
 
 		sleep(1);
 
@@ -84,8 +87,8 @@ bool CTimeWheel::checkElementExit(const Sessionkey& key)
 {
 	MapIterType ite;
 	Sessionkey reverKey(key.dstIp,key.srcIp,
-						key.dstPort,key.srcPort);
-	
+						key.dstPort,key.srcPort, key.protocol);
+
 	//正向查找
 	ite = keyMap.find(key);
 	if(ite == keyMap.end())
@@ -98,7 +101,7 @@ bool CTimeWheel::checkElementExit(const Sessionkey& key)
 			return false;
 		}
 	}
-	
+
 	Sessionkey rawkey = ite->first;
 
 	// 如果找到元素，将其移动到最新的bucket中
@@ -106,13 +109,7 @@ bool CTimeWheel::checkElementExit(const Sessionkey& key)
 	EntryPtr entry = weakEntry.lock();
 	if(entry)
 	{
-		// 从所有bucket中移除该entry
-		for(auto& bucket : sessionKeyBuckets)
-		{
-			bucket.erase(entry);
-		}
-		// 添加到最新的bucket中
-		sessionKeyBuckets.back().insert(entry);
+		moveEntryToLatestBucket(entry, entry->bucketIndex);
 	}
 
 	return true;
@@ -120,15 +117,18 @@ bool CTimeWheel::checkElementExit(const Sessionkey& key)
 
 bool CTimeWheel::AddElement(const Sessionkey& rawKey)
 {
+	std::lock_guard<std::mutex> lock(mtx);
+
 	//如果元素已存在，则更新map中元素
 	if(true == checkElementExit(rawKey))
 	{
 		return false;
 	}
-	
+
 	sessionkeyPtr sharedEntryPtr(new Sessionkey(rawKey));
 
-	EntryPtr entry(new Entry(sharedEntryPtr));
+	int currentBucketIdx = sessionKeyBuckets.size() - 1;
+	EntryPtr entry(new Entry(sharedEntryPtr, currentBucketIdx));
 
 	//将entry添加到当前时间轮尾部的bucket中
 	sessionKeyBuckets.back().insert(entry);
@@ -141,4 +141,90 @@ bool CTimeWheel::AddElement(const Sessionkey& rawKey)
 	keyMap.insert(std::pair<Sessionkey,int>(*sharedEntryPtr,100));
 
 	return true;
+}
+
+// 移动entry到最新的bucket（优化版，避免遍历所有bucket）
+void CTimeWheel::moveEntryToLatestBucket(EntryPtr& entry, int currentBucketIdx)
+{
+	if (currentBucketIdx >= 0 && currentBucketIdx < sessionKeyBuckets.size())
+	{
+		// 从当前bucket中移除
+		sessionKeyBuckets[currentBucketIdx].erase(entry);
+	}
+
+	// 添加到最新的bucket中
+	int newBucketIdx = sessionKeyBuckets.size() - 1;
+	sessionKeyBuckets.back().insert(entry);
+	entry->bucketIndex = newBucketIdx;
+}
+
+// 更新会话：接收到数据后更新生命周期和统计信息
+bool CTimeWheel::UpdateSession(const Sessionkey& key, bool isUplink, uint64_t bytes, uint64_t packets)
+{
+	std::lock_guard<std::mutex> lock(mtx);
+
+	MapIterType ite;
+	Sessionkey reverKey(key.dstIp, key.srcIp, key.dstPort, key.srcPort, key.protocol);
+
+	//正向查找
+	ite = keyMap.find(key);
+	if(ite == keyMap.end())
+	{
+		//反向查找
+		ite = keyMap.find(reverKey);
+		if(ite == keyMap.end())
+		{
+			// 元素不存在，先添加
+			Sessionkey newKey = key;
+			newKey.updateStats(isUplink, bytes, packets);
+			return AddElement(newKey);
+		}
+	}
+
+	Sessionkey rawkey = ite->first;
+
+	// 更新统计信息
+	weakEntryPtr weakEntry = rawkey.context;
+	EntryPtr entry = weakEntry.lock();
+	if(entry)
+	{
+		entry->sharedKey->updateStats(isUplink, bytes, packets);
+		// 移动到最新的bucket，刷新生命周期
+		moveEntryToLatestBucket(entry, entry->bucketIndex);
+		return true;
+	}
+
+	return false;
+}
+
+// 获取会话统计信息
+bool CTimeWheel::GetSessionStats(const Sessionkey& key, SessionStats& stats)
+{
+	std::lock_guard<std::mutex> lock(mtx);
+
+	MapIterType ite;
+	Sessionkey reverKey(key.dstIp, key.srcIp, key.dstPort, key.srcPort, key.protocol);
+
+	//正向查找
+	ite = keyMap.find(key);
+	if(ite == keyMap.end())
+	{
+		//反向查找
+		ite = keyMap.find(reverKey);
+		if(ite == keyMap.end())
+		{
+			return false;
+		}
+	}
+
+	Sessionkey rawkey = ite->first;
+	weakEntryPtr weakEntry = rawkey.context;
+	EntryPtr entry = weakEntry.lock();
+	if(entry)
+	{
+		stats = entry->sharedKey->stats;
+		return true;
+	}
+
+	return false;
 }

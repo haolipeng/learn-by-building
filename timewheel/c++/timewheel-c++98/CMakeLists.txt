@@ -1,6 +1,6 @@
-project(cpp-timewheel-c98)
-
 cmake_minimum_required(VERSION 3.10)
+
+project(cpp-timewheel-c98)
 
 # 设置C++标准为C++98
 set(CMAKE_CXX_STANDARD 98)

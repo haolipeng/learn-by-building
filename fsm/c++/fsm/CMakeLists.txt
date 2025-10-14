@@ -1,6 +1,6 @@
-project(cpp-fsm)
-
 cmake_minimum_required(VERSION 3.10)
+
+project(cpp-fsm)
 
 # 设置C++标准为C++98
 set(CMAKE_CXX_STANDARD 98)
@@ -14,5 +14,5 @@ add_executable(cpp-fsm main.cpp fsm.cpp fsm.h)
 
 # 设置输出目录
 set_target_properties(cpp-fsm PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
